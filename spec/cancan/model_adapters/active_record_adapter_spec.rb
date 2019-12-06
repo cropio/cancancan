@@ -539,4 +539,29 @@ WHERE "articles"."published" = #{false_v} AND "articles"."secret" = #{true_v}))
       end
     end
   end
+
+  context 'when a table has json type colum' do
+    before do
+      ActiveRecord::Schema.define do
+        create_table(:transactions) do |t|
+          t.integer :user_id
+          t.json :additional_data
+        end
+      end
+
+      class Transaction < ActiveRecord::Base
+        belongs_to :user
+      end
+    end
+
+    it 'can filter correctly' do
+      user = User.create!
+      transaction = Transaction.create!(user: user)
+
+      ability = Ability.new(user)
+      ability.can :read, Transaction, user: { id: user.id }
+
+      expect(Transaction.accessible_by(ability)).to match_array([transaction])
+    end
+  end
 end
